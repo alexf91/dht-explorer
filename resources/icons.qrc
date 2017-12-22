@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/trayicon.svg</file>
+    </qresource>
+</RCC>

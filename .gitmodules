@@ -1,0 +1,3 @@
+[submodule "dht"]
+	path = src/dht
+	url = git@github.com:transmission/dht.git
