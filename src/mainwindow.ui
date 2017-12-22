@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="peerTab">
        <attribute name="title">
@@ -76,6 +76,9 @@
            <font>
             <family>Bitstream Vera Sans Mono</family>
            </font>
+          </property>
+          <property name="maxLength">
+           <number>40</number>
           </property>
          </widget>
         </item>

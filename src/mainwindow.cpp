@@ -43,6 +43,11 @@ MainWindow::MainWindow() :
     ui->setupUi(this);
     ui->peerTable->setReadOnly(true);
 
+    searchValidator = new HashValidator(this);
+    ui->searchInput->setValidator(searchValidator);
+    ui->searchButton->setEnabled(false);
+    connect(searchValidator, &HashValidator::validityChanged, ui->searchButton, &QPushButton::setEnabled);
+
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(ui->actionQuit);
 

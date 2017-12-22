@@ -23,6 +23,9 @@
 #include <QSettings>
 #include <QTimer>
 
+#include "hashvalidator.h"
+
+
 namespace Ui {
     class MainWindow;
 }
@@ -53,6 +56,7 @@ private:
     Ui::MainWindow *ui;
     QMenu *trayIconMenu;
     QSystemTrayIcon *trayIcon;
+    HashValidator *searchValidator;
 
     int s4;                 /* Descriptor for IPv4 socket */
     int s6;                 /* Descriptor for IPv6 socket */

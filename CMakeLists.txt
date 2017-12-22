@@ -19,6 +19,7 @@ set(SRCS_LIST
     src/mainwindow.cpp
     src/mainwindow.h
     src/unix.c
+    src/hashvalidator.h
     src/dht/dht.c
     src/dht/dht.h
 )
