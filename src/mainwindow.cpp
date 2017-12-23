@@ -25,6 +25,8 @@
 #include <QDir>
 #include <QByteArray>
 #include <QHostAddress>
+#include <QUrl>
+#include <QClipboard>
 #include "mainwindow.h"
 #include "dht/dht.h"
 
@@ -41,12 +43,19 @@ MainWindow::MainWindow() :
     myID(nullptr)
 {
     ui->setupUi(this);
-    ui->peerTable->setReadOnly(true);
+    ui->peerList->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     searchValidator = new HashValidator(this);
     ui->searchInput->setValidator(searchValidator);
     ui->searchButton->setEnabled(false);
     connect(searchValidator, &HashValidator::validityChanged, ui->searchButton, &QPushButton::setEnabled);
+
+    connect(ui->searchButton, &QPushButton::clicked, this, &MainWindow::searchButtonClicked);
+    connect(ui->searchList, &QListWidget::currentRowChanged, this, &MainWindow::searchListRowChanged);
+
+    connect(ui->copyButton, &QPushButton::clicked, this, &MainWindow::copyResultsToClipboard);
+    connect(ui->refreshButton, &QPushButton::clicked, this, &MainWindow::refreshButtonClicked);
+    connect(ui->clearButton, &QPushButton::clicked, this, &MainWindow::clearButtonClicked);
 
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(ui->actionQuit);
@@ -276,7 +285,7 @@ void MainWindow::socketActivated(int s)
                           &tosleep, this->dhtCallback, this);
     }
     else {
-        rc = dht_periodic(NULL, 0, NULL, 0, &tosleep, this->dhtCallback, this);
+        rc = dht_periodic(nullptr, 0, nullptr, 0, &tosleep, this->dhtCallback, this);
     }
 
     if(rc < 0) {
@@ -305,17 +314,48 @@ void MainWindow::timerActivated(void)
 }
 
 /**
- * Called by dht_periodid.
- * inst is a pointer to the MainWindow object
+ * Called by dht_periodic.
+ * inst is a pointer to a CallbackInfo structure.
  */
-void MainWindow::dhtCallback(void *inst, int event,
+void MainWindow::dhtCallback(void *win, int event,
                              const unsigned char *info_hash,
                              const void *data, size_t data_len)
 {
-    if(event == DHT_EVENT_SEARCH_DONE)
-        qDebug() << "Search done";
-    else if(event == DHT_EVENT_VALUES)
-        qDebug() << "Received" << (int)(data_len / 6) << "values";
+    auto window = static_cast<MainWindow *>(win);
+    QByteArray hash((char *) info_hash, 20);
+
+    /* Find the SearchInfo structure for the callback */
+    SearchInfo *info = window->findSearchInfo(hash);
+
+    if(info) {
+        if(event == DHT_EVENT_SEARCH_DONE) {
+            qDebug() << "Search for" << hash.toHex() << "completed";
+            emit info->searchDone();
+        }
+        else if(event == DHT_EVENT_VALUES) {
+            qDebug() << "Received" << data_len / 6 << "values for" << hash.toHex();
+
+            for(int i=0; i<data_len; i+=6) {
+                int port = (((const unsigned char *) data)[i+4] << 8) | ((const unsigned char *) data)[i+5];
+
+                auto addr = QString("%1.%2.%3.%4:%5")
+                    .arg(((unsigned char *) data)[i+0])
+                    .arg(((unsigned char *) data)[i+1])
+                    .arg(((unsigned char *) data)[i+2])
+                    .arg(((unsigned char *) data)[i+3])
+                    .arg(port);
+
+                info->results.insert(addr);
+            }
+            emit info->searchUpdate();
+        }
+        else if(event == DHT_EVENT_VALUES6) {
+            qDebug() << "Receiving IPv6 nodes not supported";
+        }
+    }
+    else {
+        qDebug() << "Callback executed for unknown hash" << hash.toHex();
+    }
 }
 
 /**
@@ -332,9 +372,11 @@ void MainWindow::updatePeers(void)
 
     auto peers = getPeers();
     peers.sort();
-    auto peerText = peers.join("\n");
-    ui->peerTable->clear();
-    ui->peerTable->setText(peerText);
+
+    ui->peerList->clear();
+    for(auto &p : peers) {
+        ui->peerList->addItem(p);
+    }
 }
 
 /**
@@ -362,4 +404,153 @@ QStringList MainWindow::getPeers(void)
     }
 
     return nodes;
+}
+
+/**
+ * Start a new search
+ */
+void MainWindow::searchButtonClicked(bool unused)
+{
+    auto hash = QByteArray::fromHex(ui->searchInput->text().toLatin1());
+    SearchInfo *info = findSearchInfo(hash);
+
+    bool exists = true;
+    if(not info) {
+        info = new SearchInfo(hash, this);
+        exists = false;
+    }
+
+    if(exists) {
+        qDebug() << "Restart search for" << info->hash.toHex();
+    }
+    else {
+        qDebug() << "Start a search for" << info->hash.toHex();
+
+        ui->searchList->addItem(info->hash.toHex());
+        if(ui->searchList->count() == 1) {
+            ui->searchList->setCurrentRow(0);
+        }
+        ui->searchInput->clear();
+
+        activeSearches.append(info);
+        connect(info, &SearchInfo::searchDone, this, &MainWindow::searchDone);
+        connect(info, &SearchInfo::searchUpdate, this, &MainWindow::searchUpdate);
+    }
+    ui->searchInput->clear();
+
+    dht_search((unsigned char *) info->hash.data(), 0, AF_INET, &MainWindow::dhtCallback, this);
+}
+
+/**
+ * Called when a search is completed
+ */
+void MainWindow::searchDone(void)
+{
+    updateSearchResults();
+}
+
+/**
+ * Called when a search is updated
+ */
+void MainWindow::searchUpdate(void)
+{
+    updateSearchResults();
+}
+
+/**
+ * Called when the user selects another hash in the
+ * searchList widget.
+ */
+void MainWindow::searchListRowChanged(int row)
+{
+    updateSearchResults();
+}
+
+/**
+ * Update the search results widget
+ */
+void MainWindow::updateSearchResults(void)
+{
+    auto item = ui->searchList->currentItem();
+    if(item) {
+        QByteArray hash = QByteArray::fromHex(item->text().toLatin1());
+        SearchInfo *info = findSearchInfo(hash);
+
+        if(info) {
+            ui->searchResults->clear();
+            for(auto &r : info->results) {
+                ui->searchResults->addItem(r);
+            }
+        }
+    }
+}
+
+/**
+ * Copy button pressed
+ */
+void MainWindow::copyResultsToClipboard(void)
+{
+    auto item = ui->searchList->currentItem();
+    if(item) {
+        QByteArray hash = QByteArray::fromHex(item->text().toLatin1());
+        SearchInfo *info = findSearchInfo(hash);
+
+        if(info) {
+            QString results = QStringList(info->results.toList()).join("\n");
+            QClipboard *clipboard = QApplication::clipboard();
+            clipboard->setText(results);
+        }
+    }
+}
+
+/**
+ * Restart search, but keep results
+ */
+void MainWindow::refreshButtonClicked(bool unused)
+{
+    auto item = ui->searchList->currentItem();
+    if(item) {
+        QByteArray hash = QByteArray::fromHex(item->text().toLatin1());
+        SearchInfo *info = findSearchInfo(hash);
+
+        if(info) {
+            qDebug() << "Restarting search for" << hash.toHex();
+            dht_search((unsigned char *) info->hash.data(), 0, AF_INET, &MainWindow::dhtCallback, this);
+        }
+    }
+}
+
+/**
+ * Clear search results
+ */
+void MainWindow::clearButtonClicked(bool unused)
+{
+    auto item = ui->searchList->currentItem();
+    if(item) {
+        QByteArray hash = QByteArray::fromHex(item->text().toLatin1());
+        SearchInfo *info = findSearchInfo(hash);
+
+        if(info) {
+            activeSearches.removeAll(info);
+            delete ui->searchList->currentItem();
+
+            if(ui->searchList->count() == 0) {
+                ui->searchResults->clear();
+            }
+        }
+    }
+}
+
+/**
+ * Find the SearchInfo structure belonging to a hash
+ */
+SearchInfo * MainWindow::findSearchInfo(QByteArray &hash)
+{
+    SearchInfo *info = nullptr;
+    for(auto &p : activeSearches) {
+        if(p->hash == hash) {
+            return p;
+        }
+    }
+    return nullptr;
 }

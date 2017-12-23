@@ -1,5 +1,8 @@
 <RCC>
     <qresource prefix="/">
         <file>icons/trayicon.svg</file>
+        <file>icons/refresh.svg</file>
+        <file>icons/clear.svg</file>
+        <file>icons/document.svg</file>
     </qresource>
 </RCC>

@@ -22,9 +22,30 @@
 #include <QSocketNotifier>
 #include <QSettings>
 #include <QTimer>
+#include <QSet>
+#include <QListWidgetItem>
 
 #include "hashvalidator.h"
 
+
+class SearchInfo : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit SearchInfo(QByteArray &hash, QObject *parent = 0) :
+        QObject(parent),
+        hash(hash)
+    { }
+
+signals:
+    void searchDone();
+    void searchUpdate();
+
+public:
+    QByteArray hash;            /* Hash that is being searched */
+    QSet<QString> results;      /* Adresses discovered */
+};
 
 namespace Ui {
     class MainWindow;
@@ -45,18 +66,28 @@ private slots:
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
     void socketActivated(int s);
     void timerActivated(void);
+    void searchButtonClicked(bool unused);
+    void refreshButtonClicked(bool unused);
+    void clearButtonClicked(bool unused);
+    void searchDone(void);
+    void searchUpdate(void);
+    void searchListRowChanged(int row);
+    void copyResultsToClipboard(void);
 
 private:
-    static void dhtCallback(void *inst, int event, const unsigned char *info_hash,
+    static void dhtCallback(void *win, int event, const unsigned char *info_hash,
                   const void *data, size_t data_len);
 
-    void updatePeers(void);
-    QStringList getPeers(void);
+    void updatePeers(void);         /* Update peerlist widget */
+    QStringList getPeers(void);     /* Get the list of peers */
+    void updateSearchResults(void); /* Update the search results widget */
+    SearchInfo *findSearchInfo(QByteArray &hash);
 
     Ui::MainWindow *ui;
     QMenu *trayIconMenu;
     QSystemTrayIcon *trayIcon;
     HashValidator *searchValidator;
+    QList<SearchInfo *> activeSearches;
 
     int s4;                 /* Descriptor for IPv4 socket */
     int s6;                 /* Descriptor for IPv6 socket */

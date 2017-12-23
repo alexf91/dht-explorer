@@ -26,11 +26,9 @@
        </attribute>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
-         <widget class="QTextEdit" name="peerTable">
-          <property name="font">
-           <font>
-            <family>Bitstream Vera Sans Mono</family>
-           </font>
+         <widget class="QListWidget" name="peerList">
+          <property name="sortingEnabled">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -41,30 +39,11 @@
         <string>Search</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="1" column="0" rowspan="2" colspan="3">
-         <layout class="QHBoxLayout" name="resultLayout">
-          <item>
-           <widget class="QListWidget" name="searchList">
-            <property name="font">
-             <font>
-              <family>Bitstream Vera Sans Mono</family>
-             </font>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QTextEdit" name="searchResults">
-            <property name="font">
-             <font>
-              <family>Bitstream Vera Sans Mono</family>
-             </font>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
         <item row="0" column="2">
          <widget class="QPushButton" name="searchButton">
+          <property name="toolTip">
+           <string>Search for hash</string>
+          </property>
           <property name="text">
            <string>Search</string>
           </property>
@@ -77,16 +56,87 @@
             <family>Bitstream Vera Sans Mono</family>
            </font>
           </property>
-          <property name="maxLength">
-           <number>40</number>
-          </property>
          </widget>
         </item>
+        <item row="1" column="0" rowspan="2" colspan="3">
+         <layout class="QHBoxLayout" name="resultLayout">
+          <item>
+           <layout class="QVBoxLayout" name="controlLayout">
+            <item>
+             <widget class="QPushButton" name="refreshButton">
+              <property name="toolTip">
+               <string>Refresh results</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset theme=":/icons/refresh.svg"/>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="clearButton">
+              <property name="toolTip">
+               <string>Delete selected search results</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset theme=":/icons/clear.svg"/>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="copyButton">
+              <property name="toolTip">
+               <string>Copy results to clipboard</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset theme=":/icons/document.svg"/>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QListWidget" name="searchList">
+            <property name="font">
+             <font>
+              <family>Bitstream Vera Sans Mono</family>
+             </font>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QListWidget" name="searchResults"/>
+          </item>
+         </layout>
+        </item>
         <item row="0" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Hash: </string>
-          </property>
+         <widget class="QComboBox" name="searchTypeCombo">
+          <item>
+           <property name="text">
+            <string>Hash</string>
+           </property>
+          </item>
          </widget>
         </item>
        </layout>
@@ -136,6 +186,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources/icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

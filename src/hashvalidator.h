@@ -48,7 +48,6 @@ public:
         }
 
         if(low.size() > 40) {
-            emit validityChanged(false);
             return Invalid;
         }
 
