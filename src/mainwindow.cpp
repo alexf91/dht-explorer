@@ -57,6 +57,9 @@ MainWindow::MainWindow() :
     connect(ui->refreshButton, &QPushButton::clicked, this, &MainWindow::refreshButtonClicked);
     connect(ui->clearButton, &QPushButton::clicked, this, &MainWindow::clearButtonClicked);
 
+    peerLabel = new QLabel(this);
+    ui->statusbar->addPermanentWidget(peerLabel);
+
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(ui->actionQuit);
 
@@ -87,7 +90,7 @@ MainWindow::~MainWindow()
 
     settings->sync();
     delete settings;
-    delete myID;
+    delete[] myID;
 }
 
 /**
@@ -369,6 +372,7 @@ void MainWindow::updatePeers(void)
     dht_nodes(AF_INET6, &good6, nullptr, nullptr, nullptr);
 
     trayIcon->setToolTip(QString("Peers: %1+%2").arg(good4).arg(good6));
+    peerLabel->setText(QString("Peers: %1+%2").arg(good4).arg(good6));
 
     auto peers = getPeers();
     peers.sort();
@@ -481,6 +485,7 @@ void MainWindow::updateSearchResults(void)
             for(auto &r : info->results) {
                 ui->searchResults->addItem(r);
             }
+            ui->searchLabel->setText(QString("%1 nodes").arg(info->results.count()));
         }
     }
 }
@@ -536,6 +541,7 @@ void MainWindow::clearButtonClicked(bool unused)
 
             if(ui->searchList->count() == 0) {
                 ui->searchResults->clear();
+                ui->searchLabel->clear();
             }
         }
     }

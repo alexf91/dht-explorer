@@ -23,6 +23,7 @@
 #include <QSettings>
 #include <QTimer>
 #include <QSet>
+#include <QLabel>
 #include <QListWidgetItem>
 
 #include "hashvalidator.h"
@@ -87,7 +88,7 @@ private:
     QMenu *trayIconMenu;
     QSystemTrayIcon *trayIcon;
     HashValidator *searchValidator;
-    QList<SearchInfo *> activeSearches;
+    QLabel *peerLabel;
 
     int s4;                 /* Descriptor for IPv4 socket */
     int s6;                 /* Descriptor for IPv6 socket */
@@ -95,6 +96,7 @@ private:
     QSocketNotifier *sn6;   /* Socket notifier for IPv6 socket */
     QTimer *timer;          /* Timer to call dht_periodic */
 
+    QList<SearchInfo *> activeSearches;
     QSettings *settings;
     unsigned char *myID;
 };
