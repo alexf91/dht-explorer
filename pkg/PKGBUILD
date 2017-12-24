@@ -1,0 +1,43 @@
+# Maintainer: Alexander Fasching <fasching.a91@gmail.com>
+pkgname=dht-explorer-git
+_gitname=dht-explorer
+pkgver=r6.0a52eaf
+pkgrel=1
+pkgdesc="Qt GUI for the BitTorrent DHT implementation"
+arch=('i686' 'x86_64')
+url="https://github.com/alexf91/dht-explorer"
+license=('GPL')
+depends=('qt5-base' 'openssl')
+makedepends=('cmake')
+provides=('dht-explorer')
+source=('git+https://github.com/alexf91/dht-explorer')
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$_gitname"
+  ( set -o pipefail
+    git describe --long 2>/dev/null | sed 's/\([^-]*-g\)/r\1/;s/-/./g' ||
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  )
+}
+
+build() {
+  cd "$srcdir/$_gitname"
+
+  git submodule update --init
+  mkdir -p build
+  cd build
+  cmake -DCMAKE_BUILD_TYPE=Release ..
+
+  make
+}
+
+package() {
+  cd "$srcdir/$_gitname/build"
+  mkdir -p "$pkgdir"/usr/bin
+  install -D -m755 dht-explorer $pkgdir/usr/bin
+
+  mkdir -p "$pkgdir/usr/share/licenses/$_gitname"
+  cd "$srcdir/$_gitname"
+  install -Dm644 COPYING "$pkgdir/usr/share/licenses/$_gitname/LICENSE"
+}

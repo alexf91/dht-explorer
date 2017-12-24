@@ -36,3 +36,4 @@ QT5_ADD_RESOURCES(RESOURCES_LIST
 
 add_executable(dht-explorer ${SRCS_LIST} ${UI_HEADERS} ${RESOURCES_LIST})
 target_link_libraries(dht-explorer Qt5::Widgets Qt5::Network ${OPENSSL_LIBRARIES})
+install(TARGETS dht-explorer RUNTIME DESTINATION bin)
