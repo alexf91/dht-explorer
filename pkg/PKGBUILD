@@ -1,7 +1,7 @@
 # Maintainer: Alexander Fasching <fasching.a91@gmail.com>
 pkgname=dht-explorer-git
 _gitname=dht-explorer
-pkgver=r6.0a52eaf
+pkgver=r7.83f185f
 pkgrel=1
 pkgdesc="Qt GUI for the BitTorrent DHT implementation"
 arch=('i686' 'x86_64')
